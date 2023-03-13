@@ -1,7 +1,10 @@
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
-import 'package:process_run/shell.dart';
+import 'package:process_run/shell_run.dart';
 import 'package:test_flutter_cmd/pages/main_board/adb_tool_main_board.dart';
+import 'package:test_flutter_cmd/pages/main_board/drop_target_common.dart';
+import 'package:test_flutter_cmd/utils/AdbUtil.dart';
+import 'package:test_flutter_cmd/utils/ShellUtil.dart';
 
 import '../utils/SharedPreferenceUtil.dart';
 
@@ -20,21 +23,21 @@ class MacOSHomepage extends StatefulWidget {
 
 class _MacOSHomepageState extends State<MacOSHomepage>
     with SharedPreferenceUtil {
+  final _shell = ShellUtil.newInstance();
+
   void _checkAdbPath() async {
-    var shell = Shell();
     try {
       var savedPath = await getSharedString("adb_path");
+      // TODO djy
+      savedPath = "";
       if (savedPath.isEmpty) {
         _searchingForAdbPath();
         return;
       }
-      var res = await shell.runExecutableArguments(savedPath, ["version"]);
-      if (res.exitCode == 0) {
-        _goToMainBoard(savedPath);
-        return;
-      } else {
-        await saveSharedString("adb_path", "");
-      }
+      AdbUtil.setPath(savedPath);
+      _shell.pushd(savedPath);
+      _goToMainBoard();
+      return;
     } catch (e) {
       debugPrint(e.toString());
     }
@@ -44,24 +47,22 @@ class _MacOSHomepageState extends State<MacOSHomepage>
   var _searching = true;
 
   void _searchingForAdbPath() async {
-    var shell = Shell();
     try {
-      var whichAdbRes = await shell.runExecutableArguments("which", ["adb"]);
-      if (whichAdbRes.exitCode != 0) {
-        setState(() {
-          _searching = false;
-        });
-      } else {
-        var path = whichAdbRes.outLines.first;
-        await saveSharedString("adb_path", path);
-        _goToMainBoard(path);
+      String? whichAdbRes = await which("adb");
+      if (whichAdbRes != null && whichAdbRes.isNotEmpty) {
+        String folderPath = whichAdbRes.substring(0, whichAdbRes.length - 3);
+        await saveSharedString("adb_path", folderPath);
+        AdbUtil.setPath(folderPath);
+        _shell.pushd(folderPath);
+        _goToMainBoard();
         return;
       }
     } catch (e) {
-      setState(() {
-        _searching = false;
-      });
+      debugPrint(e.toString());
     }
+    setState(() {
+      _searching = false;
+    });
   }
 
   @override
@@ -85,41 +86,41 @@ class _MacOSHomepageState extends State<MacOSHomepage>
 
   Widget _dropPathWidget() {
     return Center(
-      child: Row(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Text("Please drop adb folder here..."),
-          DropTarget(
-              onDragEntered: (detail) {
-                setState(() {
-                  _dragging = true;
-                });
-              },
-              onDragExited: (detail) {
-                setState(() {
-                  _dragging = false;
-                });
-              },
-              onDragDone: (detail) {
-                setState(() {
-                  _searching = true;
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(detail.files.first.path)));
-              },
-              child: Container(
-                  width: 200,
-                  height: 40,
-                  decoration: BoxDecoration(
-                      color: _dragging ? Colors.lightBlueAccent : Colors.white,
-                      borderRadius: BorderRadius.circular(5),
-                      border: Border.all(color: Colors.lightBlueAccent))))
+          Container(
+            padding: const EdgeInsets.all(10),
+            child: const Text(
+              "Please drop adb folder here...",
+              style: TextStyle(fontSize: 16, color: Colors.black),
+            ),
+          ),
+          DropTargetCommon(400, 200, (path) {
+            _onGetPath(path);
+          }, (path) {
+            _onGetPath(path);
+          })
         ],
       ),
     );
   }
 
-  void _goToMainBoard(String path) {
+  void _onGetPath(String path) {
+    // TODO djy need test
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+      path,
+      style: TextStyle(fontSize: 16, color: Colors.white),
+    )));
+    setState(() {
+      _searching = true;
+    });
+  }
+
+  void _goToMainBoard() {
     Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (ctx) => AdbToolMainBoard(path)));
+        MaterialPageRoute(builder: (ctx) => const AdbToolMainBoard()));
   }
 }

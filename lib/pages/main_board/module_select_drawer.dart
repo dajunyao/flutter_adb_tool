@@ -5,8 +5,10 @@ import '../../consts/module_consts.dart';
 
 class ModuleSelectDrawer extends StatefulWidget {
   final int current_id;
+  final Function(int) result;
 
-  const ModuleSelectDrawer(this.current_id, {Key? key}) : super(key: key);
+  const ModuleSelectDrawer(this.current_id, this.result, {Key? key})
+      : super(key: key);
 
   @override
   State<ModuleSelectDrawer> createState() => _ModuleSelectDrawerState();
@@ -42,7 +44,7 @@ class _ModuleSelectDrawerState extends State<ModuleSelectDrawer> {
           );
         } else {
           return ModuleSelectItem(_moduleIds[index - 1],
-              _moduleIds[index - 1] == widget.current_id);
+              _moduleIds[index - 1] == widget.current_id, widget.result);
         }
       },
       itemCount: _moduleIds.length + 1,
