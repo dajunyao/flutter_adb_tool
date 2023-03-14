@@ -1,6 +1,4 @@
-import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test_flutter_cmd/pages/main_board/drop_target_common.dart';
 import 'package:test_flutter_cmd/utils/SharedPreferenceUtil.dart';
 
@@ -16,7 +14,14 @@ class ModuleSettings extends StatefulWidget {
 class _ModuleSettingsState extends State<ModuleSettings>
     with SharedPreferenceUtil {
   String _currentSource = "";
-  String _currentTarget = "";
+
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    super.dispose();
+    _controller.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +42,8 @@ class _ModuleSettingsState extends State<ModuleSettings>
                     )));
                     return;
                   }
-                  if (_currentTarget.isEmpty) {
+                  String target = _controller.text;
+                  if (target.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                         content: Text(
                       "Please select Target apk ",
@@ -45,7 +51,7 @@ class _ModuleSettingsState extends State<ModuleSettings>
                     )));
                     return;
                   }
-                  Navigator.pop(context, [_currentSource, _currentTarget]);
+                  Navigator.pop(context, [_currentSource, target]);
                 },
                 style: ButtonStyle(backgroundColor:
                     MaterialStateProperty.resolveWith((states) {
@@ -98,17 +104,14 @@ class _ModuleSettingsState extends State<ModuleSettings>
                       style: TextStyle(fontSize: 16, color: Colors.black),
                     ),
                   ),
-                  DropTargetCommon(
-                    MediaQuery.of(context).size.width,
-                    200,
-                    (path) {
-                      _getTargetPath(path);
-                    },
-                    (path) {
-                      _getTargetPath(path);
-                    },
+                  Container(
+                    width: MediaQuery.of(context).size.width,
+                    height: 200,
                     margin: const EdgeInsets.symmetric(horizontal: 15),
-                  ),
+                    child: TextField(
+                      controller: _controller,
+                    ),
+                  )
                 ],
               ),
             ),
@@ -122,13 +125,6 @@ class _ModuleSettingsState extends State<ModuleSettings>
     _currentSource = path;
     String key =
         "${SharedPreferenceUtil.module_setting_source}${widget.moduleId}";
-    saveSharedString(key, path);
-  }
-
-  void _getTargetPath(String path) {
-    _currentTarget = path;
-    String key =
-        "${SharedPreferenceUtil.module_setting_target}${widget.moduleId}";
     saveSharedString(key, path);
   }
 }

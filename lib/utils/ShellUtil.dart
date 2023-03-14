@@ -6,4 +6,15 @@ class ShellUtil {
   static Shell newInstance() {
     return _shell;
   }
+
+  static Shell? _adbShell;
+
+  static Shell getAdbShell() {
+    return _adbShell!;
+  }
+
+  static Shell newAdbInstance(String home) {
+    _adbShell = Shell(workingDirectory: home);
+    return _adbShell!;
+  }
 }

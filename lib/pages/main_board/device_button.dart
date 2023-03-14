@@ -6,7 +6,7 @@ import 'package:test_flutter_cmd/utils/ShellUtil.dart';
 
 class DeviceButton extends StatefulWidget {
   final double height;
-  final Function(String) logBack;
+  final Function(String,bool) logBack;
 
   const DeviceButton(this.height, this.logBack, {Key? key}) : super(key: key);
 
@@ -23,7 +23,7 @@ class _DeviceButtonState extends State<DeviceButton> {
 
   int _status = INIT;
 
-  final _shell = ShellUtil.newInstance();
+  final _shell = ShellUtil.getAdbShell();
 
   List<DropdownMenuItem<String>> _deviceList = [];
 
@@ -85,7 +85,7 @@ class _DeviceButtonState extends State<DeviceButton> {
           onChanged: (value) {
             setState(() {
               AdbUtil.setCurrentDevice(value!);
-              widget.logBack?.call("current device is $value");
+              widget.logBack?.call("current device is $value", false);
             });
           },
         );
@@ -124,13 +124,13 @@ class _DeviceButtonState extends State<DeviceButton> {
     _deviceList = [];
     try {
       String cmd = AdbUtil.generateCmd("devices", needDevice: false);
-      widget.logBack?.call(cmd);
+      widget.logBack?.call(cmd, true);
       var res = await _shell.run(cmd);
       if (res.isNotEmpty && res.first.exitCode == 0) {
         var line = res.outLines;
         var firstDevice = "";
         for (String l in line) {
-          widget.logBack?.call(l);
+          widget.logBack?.call(l, false);
           if (l.isEmpty || l == "List of devices attached") {
             continue;
           }
@@ -150,21 +150,21 @@ class _DeviceButtonState extends State<DeviceButton> {
         if (firstDevice.isNotEmpty) {
           AdbUtil.setCurrentDevice(firstDevice);
           _status = GET_DEVICE;
-          widget.logBack?.call("current device is $firstDevice");
+          widget.logBack?.call("current device is $firstDevice", false);
         } else {
           _status = NO_DEVICE;
-          widget.logBack?.call("No device attached");
+          widget.logBack?.call("No device attached", false);
         }
       } else {
         _status = ERROR;
-        widget.logBack?.call(res.errText);
+        widget.logBack?.call(res.errText, false);
       }
     } catch (e) {
       _status = ERROR;
       if (e is ShellException) {
-        widget.logBack?.call(e.message);
+        widget.logBack?.call(e.message, false);
       } else {
-        widget.logBack?.call(e.toString());
+        widget.logBack?.call(e.toString(), false);
       }
     }
     setState(() {});

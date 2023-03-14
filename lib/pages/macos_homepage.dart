@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:process_run/shell_run.dart';
@@ -28,14 +30,12 @@ class _MacOSHomepageState extends State<MacOSHomepage>
   void _checkAdbPath() async {
     try {
       var savedPath = await getSharedString("adb_path");
-      // TODO djy
-      savedPath = "";
       if (savedPath.isEmpty) {
         _searchingForAdbPath();
         return;
       }
       AdbUtil.setPath(savedPath);
-      _shell.pushd(savedPath);
+      ShellUtil.newAdbInstance(savedPath);
       _goToMainBoard();
       return;
     } catch (e) {
@@ -53,7 +53,7 @@ class _MacOSHomepageState extends State<MacOSHomepage>
         String folderPath = whichAdbRes.substring(0, whichAdbRes.length - 3);
         await saveSharedString("adb_path", folderPath);
         AdbUtil.setPath(folderPath);
-        _shell.pushd(folderPath);
+        ShellUtil.newAdbInstance(folderPath);
         _goToMainBoard();
         return;
       }

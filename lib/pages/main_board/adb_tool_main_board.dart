@@ -1,6 +1,5 @@
-import 'dart:async';
+import 'dart:io';
 
-import 'package:event_bus/event_bus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:process_run/shell_run.dart';
@@ -12,6 +11,7 @@ import 'package:test_flutter_cmd/utils/ShadowUtil.dart';
 import 'package:test_flutter_cmd/utils/SharedPreferenceUtil.dart';
 import 'package:test_flutter_cmd/utils/ShellUtil.dart';
 
+import '../../bean/cmd_log_bean.dart';
 import 'cmd_log_item.dart';
 import 'device_button.dart';
 import 'module_select_drawer.dart';
@@ -25,8 +25,8 @@ class AdbToolMainBoard extends StatefulWidget {
 
 class _AdbToolMainBoardState extends State<AdbToolMainBoard>
     with SharedPreferenceUtil {
-  final List<String> _logList = [];
-  final _shell = ShellUtil.newInstance();
+  final List<CmdLogBean> _logList = [];
+  final _shell = ShellUtil.getAdbShell();
 
   static const double _titleHeight = 50;
 
@@ -94,8 +94,12 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  DeviceButton(_titleHeight, (log) {
-                    _addLog(log);
+                  DeviceButton(_titleHeight, (text, isCmd) {
+                    if (isCmd) {
+                      _addCmd(text);
+                    } else {
+                      _addLog(text);
+                    }
                   }),
                   Expanded(
                       child: _currentModuleId == -1
@@ -141,10 +145,20 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
     _currentModuleTarget = await getSharedString(targetKey);
   }
 
-  _addLog(String content) {
+  void _addCmd(String cmd) {
+    CmdLogBean logBean = CmdLogBean(cmd, true);
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
       setState(() {
-        _logList.insert(0, content);
+        _logList.insert(0, logBean);
+      });
+    });
+  }
+
+  void _addLog(String log) {
+    CmdLogBean logBean = CmdLogBean(log, false);
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+      setState(() {
+        _logList.insert(0, logBean);
       });
     });
   }
@@ -188,6 +202,7 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
         const SizedBox(
           height: 15,
         ),
+        // _moduleButton("PWD"),
         _moduleButton("PUSH"),
         _moduleButton("REBOOT"),
         _moduleButton("Module Setting"),
@@ -201,6 +216,9 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
       margin: const EdgeInsets.symmetric(vertical: 10),
       child: ModuleTextButton(title, press: () {
         switch (title) {
+          case "PWD":
+            _pwd();
+            break;
           case "PUSH":
             _checkAndPush();
             break;
@@ -215,8 +233,25 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
     );
   }
 
-  void _checkAndPush() {
-    if (_currentModuleSource.isEmpty || _currentModuleSource.isEmpty) {
+  void _pwd() async {
+    try {
+      String cmd = "pwd";
+      _addCmd(cmd);
+      List<ProcessResult> results = await _shell.run(cmd);
+      if (results.isNotEmpty) {
+        _addLog(results.first.outText);
+      }
+    } catch (e) {
+      if (e is ShellException) {
+        _addLog(e.message);
+      } else {
+        _addLog(e.toString());
+      }
+    }
+  }
+
+  void _checkAndPush() async {
+    if (_currentModuleSource.isEmpty || _currentModuleTarget.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text(
         "Source / Target Apk Path not found, please click 'Module Setting'",
@@ -224,12 +259,41 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
       )));
       return;
     }
+    try {
+      String cmdRoot = AdbUtil.generateCmd("root");
+      _addCmd(cmdRoot);
+      List<ProcessResult> resRoot = await _shell.run(cmdRoot);
+      if (resRoot.isNotEmpty) {
+        _addLog(resRoot.first.outText);
+      }
+
+      String cmdRemount = AdbUtil.generateCmd("remount");
+      _addCmd(cmdRemount);
+      List<ProcessResult> resRemount = await _shell.run(cmdRemount);
+      if (resRemount.isNotEmpty) {
+        _addLog(resRemount.first.outText);
+      }
+
+      String cmdPush = AdbUtil.generateCmd(
+          "push $_currentModuleSource $_currentModuleTarget");
+      _addCmd(cmdPush);
+      List<ProcessResult> resPush = await _shell.run(cmdPush);
+      if (resPush.isNotEmpty) {
+        _addLog(resPush.first.outText);
+      }
+    } catch (e) {
+      if (e is ShellException) {
+        _addLog(e.message);
+      } else {
+        _addLog(e.toString());
+      }
+    }
   }
 
   void _reboot() async {
     try {
       String cmd = AdbUtil.generateCmd("reboot");
-      _addLog(cmd);
+      _addCmd(cmd);
       await _shell.run(cmd);
     } catch (e) {
       if (e is ShellException) {
@@ -251,8 +315,18 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
           _currentModuleSource = value[0];
           _currentModuleTarget = value[1];
           _addLog("Module Setting Success");
+          _savePathByModuleId();
         }
       });
     }
+  }
+
+  void _savePathByModuleId() async {
+    String sourceKey =
+        "${SharedPreferenceUtil.module_setting_source}#$_currentModuleId";
+    await saveSharedString(sourceKey, _currentModuleSource);
+    String targetKey =
+        "${SharedPreferenceUtil.module_setting_target}#$_currentModuleId";
+    await saveSharedString(targetKey, _currentModuleTarget);
   }
 }
