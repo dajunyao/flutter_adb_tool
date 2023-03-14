@@ -1,0 +1,2 @@
+cd installers/dmg_creator
+appdmg ./config.json ./flutter_adb_tool.dmg
