@@ -10,6 +10,7 @@ import 'package:test_flutter_cmd/utils/AdbUtil.dart';
 import 'package:test_flutter_cmd/utils/ShadowUtil.dart';
 import 'package:test_flutter_cmd/utils/SharedPreferenceUtil.dart';
 import 'package:test_flutter_cmd/utils/ShellUtil.dart';
+import 'package:test_flutter_cmd/widgets/elevated_button_common.dart';
 
 import '../../bean/cmd_log_bean.dart';
 import 'cmd_log_item.dart';
@@ -24,7 +25,7 @@ class AdbToolMainBoard extends StatefulWidget {
 }
 
 class _AdbToolMainBoardState extends State<AdbToolMainBoard>
-    with SharedPreferenceUtil {
+    with SharedPreferenceUtil, SingleTickerProviderStateMixin {
   final List<CmdLogBean> _logList = [];
   final _shell = ShellUtil.getAdbShell();
 
@@ -60,30 +61,49 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(
+                  Container(
                     height: _titleHeight,
-                    child: Text(
+                    alignment: Alignment.centerLeft,
+                    child: const Text(
                       "Command Line Logs",
-                      style: TextStyle(fontSize: 20),
+                      style: TextStyle(fontSize: 20, color: Colors.black),
                     ),
                   ),
                   Expanded(
-                    child: Container(
-                      margin: const EdgeInsets.fromLTRB(0, 15, 15, 15),
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        border: Border.all(
-                          color: Colors.black,
+                    child: Stack(
+                      alignment: Alignment.topRight,
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.fromLTRB(0, 15, 15, 15),
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            border: Border.all(
+                              color: Colors.black,
+                            ),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: ListView.builder(
+                            reverse: true,
+                            itemBuilder: ((ctx, index) {
+                              return CmdLogItem(_logList[index]);
+                            }),
+                            itemCount: _logList.length,
+                          ),
                         ),
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                      child: ListView.builder(
-                        reverse: true,
-                        itemBuilder: ((ctx, index) {
-                          return CmdLogItem(_logList[index]);
-                        }),
-                        itemCount: _logList.length,
-                      ),
+                        Container(
+                            margin: const EdgeInsets.only(right: 25, top: 25),
+                            child: ElevatedButtonCommon(
+                              onTap: () {
+                                setState(() {
+                                  _logList.clear();
+                                });
+                              },
+                              child: const Icon(
+                                Icons.refresh,
+                                color: Colors.white,
+                              ),
+                            ))
+                      ],
                     ),
                   )
                 ],
@@ -101,32 +121,29 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
                       _addLog(text);
                     }
                   }),
-                  Expanded(
-                      child: _currentModuleId == -1
-                          ? Container(
-                              margin: const EdgeInsets.fromLTRB(0, 15, 15, 15),
-                              alignment: Alignment.topLeft,
-                              child: Builder(
-                                  builder: (ctx) => GestureDetector(
-                                        child: Container(
-                                          padding: const EdgeInsets.all(15),
-                                          decoration: BoxDecoration(
-                                              color: Colors.black,
-                                              borderRadius:
-                                                  BorderRadius.circular(5)),
-                                          child: const Text(
-                                            "Choose target module",
-                                            style: TextStyle(
-                                                fontSize: 16,
-                                                color: Colors.white),
-                                          ),
-                                        ),
-                                        onTap: () {
-                                          Scaffold.of(ctx).openEndDrawer();
-                                        },
-                                      )),
-                            )
-                          : _selectedModule())
+                  const SizedBox(
+                    height: 15,
+                  ),
+                  _currentModuleId == -1
+                      ? Builder(
+                          builder: (ctx) => ElevatedButtonCommon(
+                                child: Container(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 15),
+                                  child: const Text(
+                                    "Choose target module",
+                                    style: TextStyle(
+                                        fontSize: 16, color: Colors.white),
+                                  ),
+                                ),
+                                onTap: () {
+                                  Scaffold.of(ctx).openEndDrawer();
+                                },
+                              ))
+                      : Container(),
+                  _currentModuleId == -1
+                      ? Container()
+                      : Expanded(child: _selectedModule())
                 ],
               ),
             )
@@ -171,7 +188,6 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
           height: 15,
         ),
         Container(
-          padding: const EdgeInsets.only(left: 15),
           decoration: BoxDecoration(
             color: Colors.white,
             boxShadow: ShadowUtil.getCommonShadow(),
@@ -180,20 +196,33 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
           ),
           child: Row(
             children: [
+              const SizedBox(
+                width: 15,
+              ),
               Expanded(
                   child: Text(
                 ModuleName.getNameById(_currentModuleId),
                 style: const TextStyle(color: Colors.black, fontSize: 16),
               )),
               Builder(
-                  builder: (ctx) => GestureDetector(
-                        onTap: () {
-                          Scaffold.of(ctx).openEndDrawer();
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(15),
-                          child:
-                              const Icon(Icons.edit_note, color: Colors.black),
+                  builder: (ctx) => Container(
+                        padding:
+                            const EdgeInsets.only(top: 8, bottom: 8, right: 8),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Scaffold.of(ctx).openEndDrawer();
+                          },
+                          style: ButtonStyle(backgroundColor:
+                              MaterialStateProperty.resolveWith((states) {
+                            if (states.contains(MaterialState.hovered)) {
+                              return Colors.grey;
+                            }
+                            return Colors.white;
+                          })),
+                          child: Container(
+                            child: const Icon(Icons.edit_note,
+                                color: Colors.black),
+                          ),
                         ),
                       ))
             ],

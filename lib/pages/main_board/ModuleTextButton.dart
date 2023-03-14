@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:test_flutter_cmd/widgets/elevated_button_common.dart';
 
 class ModuleTextButton extends StatelessWidget {
   final String title;
@@ -10,29 +11,18 @@ class ModuleTextButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 15),
-      decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(6), color: Colors.black),
-      child: TextButton(
-          onPressed: () {
+      child: ElevatedButtonCommon(
+          onTap: () {
             press?.call();
           },
-          style: ButtonStyle(
-            padding: MaterialStateProperty.all(
-                const EdgeInsets.symmetric(vertical: 20)),
-            textStyle: MaterialStateProperty.all(const TextStyle(fontSize: 16)),
-            foregroundColor: MaterialStateProperty.all(Colors.white),
-            backgroundColor: MaterialStateProperty.resolveWith((states) {
-              if (states.contains(MaterialState.pressed)) {
-                return Colors.grey;
-              } else {
-                return Colors.black;
-              }
-            }),
-          ),
-          child: Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 15),
+            child: Text(
+              title,
+              style: const TextStyle(fontSize: 16, color: Colors.white),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           )),
     );
   }

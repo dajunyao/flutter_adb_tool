@@ -4,9 +4,11 @@ import 'package:test_flutter_cmd/utils/AdbUtil.dart';
 import 'package:test_flutter_cmd/utils/ShadowUtil.dart';
 import 'package:test_flutter_cmd/utils/ShellUtil.dart';
 
+import '../../widgets/elevated_button_common.dart';
+
 class DeviceButton extends StatefulWidget {
   final double height;
-  final Function(String,bool) logBack;
+  final Function(String, bool) logBack;
 
   const DeviceButton(this.height, this.logBack, {Key? key}) : super(key: key);
 
@@ -37,12 +39,7 @@ class _DeviceButtonState extends State<DeviceButton> {
         Expanded(
             child: Container(
                 height: widget.height,
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(5),
-                    color: Colors.black,
-                    boxShadow: ShadowUtil.getCommonShadow()),
+                alignment: Alignment.centerLeft,
                 child: getLeft())),
         getRight()
       ],
@@ -53,41 +50,46 @@ class _DeviceButtonState extends State<DeviceButton> {
     switch (_status) {
       case INIT:
       case SEARCHING:
-        return Container(
-          height: widget.height,
-          width: widget.height,
-          padding: const EdgeInsets.all(10),
-          child: const CircularProgressIndicator(
-            color: Colors.white,
-            strokeWidth: 3,
-          ),
+        return const Text(
+          "Searching Devices...",
+          style: TextStyle(fontSize: 20, color: Colors.black),
         );
       case NO_DEVICE:
-        return const Text("No device found");
+        return const Text(
+          "No device found",
+          style: TextStyle(fontSize: 20, color: Colors.black),
+        );
       case ERROR:
-        return const Text("Sth error");
+        return const Text(
+          "Sth error",
+          style: TextStyle(fontSize: 20, color: Colors.black),
+        );
       case GET_DEVICE:
-        return DropdownButton(
-          isExpanded: true,
-          style: const TextStyle(color: Colors.white),
-          icon: Container(
-            margin: const EdgeInsets.only(left: 5),
-            child: const Icon(
-              Icons.phone_android,
-              size: 16,
-              color: Colors.white,
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 15),
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(5), color: Colors.black),
+          child: DropdownButton(
+            isExpanded: true,
+            dropdownColor: Colors.blue,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+            icon: Container(
+              margin: const EdgeInsets.only(left: 5),
+              child: const Icon(
+                Icons.phone_android,
+                size: 16,
+                color: Colors.white,
+              ),
             ),
+            value: AdbUtil.currentDevice,
+            items: _deviceList,
+            onChanged: (value) {
+              setState(() {
+                AdbUtil.setCurrentDevice(value!);
+                widget.logBack?.call("current device is $value", false);
+              });
+            },
           ),
-          dropdownColor: Colors.black,
-          value: AdbUtil.currentDevice,
-          underline: Container(),
-          items: _deviceList,
-          onChanged: (value) {
-            setState(() {
-              AdbUtil.setCurrentDevice(value!);
-              widget.logBack?.call("current device is $value", false);
-            });
-          },
         );
     }
     return Container();
@@ -95,20 +97,16 @@ class _DeviceButtonState extends State<DeviceButton> {
 
   Widget getRight() {
     if (_status != INIT && _status != SEARCHING) {
-      return GestureDetector(
-        onTap: () {
-          setState(() {
-            _status = INIT;
-          });
-        },
-        child: Container(
-          height: widget.height,
-          width: widget.height,
-          margin: const EdgeInsets.only(left: 15),
-          decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(5),
-              color: Colors.black,
-              boxShadow: ShadowUtil.getCommonShadow()),
+      return Container(
+        height: widget.height,
+        width: widget.height,
+        margin: const EdgeInsets.only(left: 15),
+        child: ElevatedButtonCommon(
+          onTap: () {
+            setState(() {
+              _status = INIT;
+            });
+          },
           child: const Icon(
             Icons.refresh,
             color: Colors.white,
