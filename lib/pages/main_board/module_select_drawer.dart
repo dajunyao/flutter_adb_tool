@@ -19,7 +19,8 @@ class _ModuleSelectDrawerState extends State<ModuleSelectDrawer> {
     ModuleId.launcher,
     ModuleId.settings,
     ModuleId.vod_widget,
-    ModuleId.system_ui
+    ModuleId.system_ui,
+    ModuleId.install
   ];
 
   @override

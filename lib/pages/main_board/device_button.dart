@@ -160,7 +160,10 @@ class _DeviceButtonState extends State<DeviceButton> {
     } catch (e) {
       _status = ERROR;
       if (e is ShellException) {
-        widget.logBack?.call(e.message, false);
+        ShellException a = e;
+        if (a.result != null && a.result!.stderr is String) {
+          widget.logBack?.call(a.result!.stderr, false);
+        }
       } else {
         widget.logBack?.call(e.toString(), false);
       }

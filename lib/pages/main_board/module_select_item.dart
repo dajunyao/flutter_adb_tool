@@ -1,6 +1,6 @@
 import 'package:event_bus/event_bus.dart';
 import 'package:flutter/material.dart';
-import 'package:test_flutter_cmd/pages/main_board/ModuleTextButton.dart';
+import 'package:test_flutter_cmd/widgets/module_text_button.dart';
 
 import '../../consts/module_consts.dart';
 

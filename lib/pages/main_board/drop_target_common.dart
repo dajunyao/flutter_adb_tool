@@ -10,10 +10,15 @@ class DropTargetCommon extends StatefulWidget {
   final EdgeInsets? margin;
   final EdgeInsets? padding;
 
-  const DropTargetCommon(
-      this.width, this.height, this.dropPathCallback, this.tapPathCallback,
-      {Key? key, this.margin, this.padding})
-      : super(key: key);
+  const DropTargetCommon({
+    Key? key,
+    this.margin,
+    this.padding,
+    required this.width,
+    required this.height,
+    required this.dropPathCallback,
+    required this.tapPathCallback,
+  }) : super(key: key);
 
   @override
   State<DropTargetCommon> createState() => _DropTargetCommonState();
@@ -75,7 +80,8 @@ class _DropTargetCommonState extends State<DropTargetCommon> {
                   _currentPath.isNotEmpty
                       ? Text(
                           _currentPath,
-                          style: const TextStyle(fontSize: 16, color: Colors.black),
+                          style: const TextStyle(
+                              fontSize: 16, color: Colors.black),
                         )
                       : Container(),
                   const Text(

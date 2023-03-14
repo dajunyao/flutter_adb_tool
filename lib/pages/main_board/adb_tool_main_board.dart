@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:process_run/shell_run.dart';
 import 'package:test_flutter_cmd/consts/module_consts.dart';
-import 'package:test_flutter_cmd/pages/main_board/ModuleTextButton.dart';
+import 'package:test_flutter_cmd/pages/main_board/install_package.dart';
+import 'package:test_flutter_cmd/widgets/module_text_button.dart';
 import 'package:test_flutter_cmd/pages/main_board/module_settings.dart';
 import 'package:test_flutter_cmd/utils/AdbUtil.dart';
 import 'package:test_flutter_cmd/utils/ShadowUtil.dart';
@@ -41,12 +42,25 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
       drawerEnableOpenDragGesture: false,
       endDrawer: Drawer(
         child: ModuleSelectDrawer(_currentModuleId, (id) {
-          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-            setState(() {
-              _currentModuleId = id;
-              _getPathByModuleId();
+          if (id == ModuleId.install) {
+            SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (ctx) => const InstallPackage())).then((value) {
+                if (value != null) {
+                  _installSth(value);
+                }
+              });
             });
-          });
+          } else {
+            SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+              setState(() {
+                _currentModuleId = id;
+                _getPathByModuleId();
+              });
+            });
+          }
         }),
       ),
       appBar: AppBar(
@@ -180,6 +194,14 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
     });
   }
 
+  void _addShellLog(ShellException a) {
+    if (a.result != null && a.result!.stderr is String) {
+      _addLog(a.result?.stderr as String);
+    } else {
+      _addLog(a.message);
+    }
+  }
+
   Widget _selectedModule() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,7 +294,7 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
       }
     } catch (e) {
       if (e is ShellException) {
-        _addLog(e.message);
+        _addShellLog(e);
       } else {
         _addLog(e.toString());
       }
@@ -312,7 +334,7 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
       }
     } catch (e) {
       if (e is ShellException) {
-        _addLog(e.message);
+        _addShellLog(e);
       } else {
         _addLog(e.toString());
       }
@@ -326,7 +348,7 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
       await _shell.run(cmd);
     } catch (e) {
       if (e is ShellException) {
-        _addLog(e.message);
+        _addShellLog(e);
       } else {
         _addLog(e.toString());
       }
@@ -357,5 +379,22 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
     String targetKey =
         "${SharedPreferenceUtil.module_setting_target}#$_currentModuleId";
     await saveSharedString(targetKey, _currentModuleTarget);
+  }
+
+  void _installSth(String path) async {
+    try {
+      String cmd = AdbUtil.generateCmd("install -t $path");
+      _addCmd(cmd);
+      List<ProcessResult> res = await _shell.run(cmd);
+      if (res.isNotEmpty) {
+        _addLog(res.first.outText);
+      }
+    } catch (e) {
+      if (e is ShellException) {
+        _addShellLog(e);
+      } else {
+        _addLog(e.toString());
+      }
+    }
   }
 }

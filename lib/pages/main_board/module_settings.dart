@@ -86,12 +86,12 @@ class _ModuleSettingsState extends State<ModuleSettings>
                     ),
                   ),
                   DropTargetCommon(
-                    MediaQuery.of(context).size.width,
-                    200,
-                    (path) {
+                    width: MediaQuery.of(context).size.width,
+                    height: 200,
+                    dropPathCallback: (path) {
                       _getSourcePath(path);
                     },
-                    (path) {
+                    tapPathCallback: (path) {
                       _getSourcePath(path);
                     },
                     margin: const EdgeInsets.symmetric(horizontal: 15),

@@ -97,11 +97,15 @@ class _MacOSHomepageState extends State<MacOSHomepage>
               style: TextStyle(fontSize: 16, color: Colors.black),
             ),
           ),
-          DropTargetCommon(400, 200, (path) {
-            _onGetPath(path);
-          }, (path) {
-            _onGetPath(path);
-          })
+          DropTargetCommon(
+              width: 400,
+              height: 200,
+              dropPathCallback: (path) {
+                _onGetPath(path);
+              },
+              tapPathCallback: (path) {
+                _onGetPath(path);
+              })
         ],
       ),
     );
