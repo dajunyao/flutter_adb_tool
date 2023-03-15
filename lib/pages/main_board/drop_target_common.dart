@@ -4,20 +4,22 @@ import 'package:flutter/material.dart';
 
 class DropTargetCommon extends StatefulWidget {
   final Function(String path) dropPathCallback;
-  final Function(String path) tapPathCallback;
+  final Function(String path)? tapPathCallback;
   final double width;
   final double height;
   final EdgeInsets? margin;
   final EdgeInsets? padding;
+  final String? presetPath;
 
   const DropTargetCommon({
     Key? key,
     this.margin,
     this.padding,
+    this.presetPath,
     required this.width,
     required this.height,
     required this.dropPathCallback,
-    required this.tapPathCallback,
+    this.tapPathCallback,
   }) : super(key: key);
 
   @override
@@ -29,21 +31,29 @@ class _DropTargetCommonState extends State<DropTargetCommon> {
   String _currentPath = "";
 
   @override
+  void initState() {
+    super.initState();
+    _currentPath = widget.presetPath ?? "";
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () async {
-        try {
-          XFile? res = await openFile(acceptedTypeGroups: [
-            const XTypeGroup(extensions: ["apk"])
-          ]);
-          if (res != null) {
-            widget.tapPathCallback?.call(res.path);
-            setState(() {
-              _currentPath = res.path;
-            });
-          }
-          // ignore: empty_catches
-        } catch (e) {}
+        if (widget.tapPathCallback != null) {
+          try {
+            XFile? res = await openFile(acceptedTypeGroups: [
+              const XTypeGroup(extensions: ["apk"])
+            ]);
+            if (res != null) {
+              widget.tapPathCallback?.call(res.path);
+              setState(() {
+                _currentPath = res.path;
+              });
+            }
+            // ignore: empty_catches
+          } catch (e) {}
+        }
       },
       child: DropTarget(
           onDragEntered: (detail) {
@@ -77,7 +87,7 @@ class _DropTargetCommonState extends State<DropTargetCommon> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _currentPath.isNotEmpty
+                  (_currentPath.isNotEmpty)
                       ? Text(
                           _currentPath,
                           style: const TextStyle(

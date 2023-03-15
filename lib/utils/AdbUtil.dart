@@ -1,8 +1,7 @@
 class AdbUtil {
-
   static String currentDevice = "";
 
-  static void setCurrentDevice(String device){
+  static void setCurrentDevice(String device) {
     currentDevice = device;
   }
 
@@ -12,14 +11,16 @@ class AdbUtil {
     adbFolderPath = path;
   }
 
-  static String getPath() {
-    return adbFolderPath;
-  }
-
-  static String generateCmd(String cmd, {bool needDevice = true}) {
+  static List<String> generateCmd(String cmd, {bool needDevice = true}) {
+    List<String> cmdList = [];
     if (currentDevice.isNotEmpty && needDevice) {
-      return "adb -s $currentDevice $cmd";
+      cmdList.add("$adbFolderPath/adb -s $currentDevice $cmd");
+      cmdList.add("adb -s $currentDevice $cmd");
+      return cmdList;
     }
-    return "adb $cmd";
+
+    cmdList.add("$adbFolderPath/adb $cmd");
+    cmdList.add("adb $cmd");
+    return cmdList;
   }
 }

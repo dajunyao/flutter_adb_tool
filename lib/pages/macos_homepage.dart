@@ -25,7 +25,8 @@ class MacOSHomepage extends StatefulWidget {
 
 class _MacOSHomepageState extends State<MacOSHomepage>
     with SharedPreferenceUtil {
-  final _shell = ShellUtil.newInstance();
+
+  var _searching = true;
 
   void _checkAdbPath() async {
     try {
@@ -44,8 +45,6 @@ class _MacOSHomepageState extends State<MacOSHomepage>
     _searchingForAdbPath();
   }
 
-  var _searching = true;
-
   void _searchingForAdbPath() async {
     try {
       String? whichAdbRes = await which("adb");
@@ -58,7 +57,20 @@ class _MacOSHomepageState extends State<MacOSHomepage>
         return;
       }
     } catch (e) {
-      debugPrint(e.toString());
+      if (e is ShellException) {
+        String err = e.result?.errText ?? "error";
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+          err,
+          style: const TextStyle(fontSize: 16, color: Colors.white),
+        )));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+          e.toString(),
+          style: const TextStyle(fontSize: 16, color: Colors.white),
+        )));
+      }
     }
     setState(() {
       _searching = false;
@@ -82,8 +94,6 @@ class _MacOSHomepageState extends State<MacOSHomepage>
     );
   }
 
-  var _dragging = false;
-
   Widget _dropPathWidget() {
     return Center(
       child: Column(
@@ -102,22 +112,16 @@ class _MacOSHomepageState extends State<MacOSHomepage>
               height: 200,
               dropPathCallback: (path) {
                 _onGetPath(path);
-              },
-              tapPathCallback: (path) {
-                _onGetPath(path);
-              })
+              },)
         ],
       ),
     );
   }
 
-  void _onGetPath(String path) {
-    // TODO djy need test
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-      path,
-      style: TextStyle(fontSize: 16, color: Colors.white),
-    )));
+  void _onGetPath(String path) async{
+    await saveSharedString("adb_path", path);
+    AdbUtil.setPath(path);
+    ShellUtil.newAdbInstance(path);
     setState(() {
       _searching = true;
     });

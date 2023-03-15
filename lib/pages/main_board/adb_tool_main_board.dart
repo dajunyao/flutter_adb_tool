@@ -195,8 +195,8 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
   }
 
   void _addShellLog(ShellException a) {
-    if (a.result != null && a.result!.stderr is String) {
-      _addLog(a.result?.stderr as String);
+    if (a.result != null && a.result!.stdout is String) {
+      _addLog(a.result?.stdout as String);
     } else {
       _addLog(a.message);
     }
@@ -311,24 +311,24 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
       return;
     }
     try {
-      String cmdRoot = AdbUtil.generateCmd("root");
-      _addCmd(cmdRoot);
-      List<ProcessResult> resRoot = await _shell.run(cmdRoot);
+      List<String> cmdRoot = AdbUtil.generateCmd("root");
+      _addCmd(cmdRoot[1]);
+      List<ProcessResult> resRoot = await _shell.run(cmdRoot[0]);
       if (resRoot.isNotEmpty) {
         _addLog(resRoot.first.outText);
       }
 
-      String cmdRemount = AdbUtil.generateCmd("remount");
-      _addCmd(cmdRemount);
-      List<ProcessResult> resRemount = await _shell.run(cmdRemount);
+      List<String> cmdRemount = AdbUtil.generateCmd("remount");
+      _addCmd(cmdRemount[1]);
+      List<ProcessResult> resRemount = await _shell.run(cmdRemount[0]);
       if (resRemount.isNotEmpty) {
         _addLog(resRemount.first.outText);
       }
 
-      String cmdPush = AdbUtil.generateCmd(
+      List<String> cmdPush = AdbUtil.generateCmd(
           "push $_currentModuleSource $_currentModuleTarget");
-      _addCmd(cmdPush);
-      List<ProcessResult> resPush = await _shell.run(cmdPush);
+      _addCmd(cmdPush[1]);
+      List<ProcessResult> resPush = await _shell.run(cmdPush[0]);
       if (resPush.isNotEmpty) {
         _addLog(resPush.first.outText);
       }
@@ -343,9 +343,9 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
 
   void _reboot() async {
     try {
-      String cmd = AdbUtil.generateCmd("reboot");
-      _addCmd(cmd);
-      await _shell.run(cmd);
+      List<String> cmd = AdbUtil.generateCmd("reboot");
+      _addCmd(cmd[1]);
+      await _shell.run(cmd[0]);
     } catch (e) {
       if (e is ShellException) {
         _addShellLog(e);
@@ -383,9 +383,9 @@ class _AdbToolMainBoardState extends State<AdbToolMainBoard>
 
   void _installSth(String path) async {
     try {
-      String cmd = AdbUtil.generateCmd("install -t $path");
-      _addCmd(cmd);
-      List<ProcessResult> res = await _shell.run(cmd);
+      List<String> cmd = AdbUtil.generateCmd("install -t $path");
+      _addCmd(cmd[1]);
+      List<ProcessResult> res = await _shell.run(cmd[0]);
       if (res.isNotEmpty) {
         _addLog(res.first.outText);
       }

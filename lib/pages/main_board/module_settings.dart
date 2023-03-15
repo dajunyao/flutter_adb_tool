@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:test_flutter_cmd/consts/module_consts.dart';
 import 'package:test_flutter_cmd/pages/main_board/drop_target_common.dart';
 import 'package:test_flutter_cmd/utils/SharedPreferenceUtil.dart';
 
@@ -13,14 +15,44 @@ class ModuleSettings extends StatefulWidget {
 
 class _ModuleSettingsState extends State<ModuleSettings>
     with SharedPreferenceUtil {
-  String _currentSource = "";
+  static const int _loading = 0;
+  static const int _showed = 1;
+  int _status = _loading;
 
-  final TextEditingController _controller = TextEditingController();
+  String _currentSourcePath = "";
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+    _initSavedData();
+  }
 
   @override
   void dispose() {
     super.dispose();
-    _controller.dispose();
+    _controller?.dispose();
+  }
+
+  void _initSavedData() async {
+    String sourceKey =
+        "${SharedPreferenceUtil.module_setting_source}${widget.moduleId}";
+    String currentSource = await getSharedString(sourceKey);
+    _currentSourcePath = currentSource;
+    String targetKey =
+        "${SharedPreferenceUtil.module_setting_target}${widget.moduleId}";
+    String currentTarget = await getSharedString(targetKey);
+    if (currentTarget.isEmpty) {
+      _controller.text = ModuleTarget.getTargetPathById(widget.moduleId);
+    } else {
+      _controller.text = currentTarget;
+    }
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+      setState(() {
+        _status = _showed;
+      });
+    });
   }
 
   @override
@@ -34,7 +66,11 @@ class _ModuleSettingsState extends State<ModuleSettings>
               margin: const EdgeInsets.only(right: 15),
               child: TextButton(
                 onPressed: () {
-                  if (_currentSource.isEmpty) {
+                  if (_status != _showed) {
+                    return;
+                  }
+
+                  if (_currentSourcePath.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                         content: Text(
                       "Please select Source apk ",
@@ -51,7 +87,7 @@ class _ModuleSettingsState extends State<ModuleSettings>
                     )));
                     return;
                   }
-                  Navigator.pop(context, [_currentSource, target]);
+                  Navigator.pop(context, [_currentSourcePath, target]);
                 },
                 style: ButtonStyle(backgroundColor:
                     MaterialStateProperty.resolveWith((states) {
@@ -69,60 +105,65 @@ class _ModuleSettingsState extends State<ModuleSettings>
               ))
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-              child: SingleChildScrollView(
-            child: SizedBox(
-              width: MediaQuery.of(context).size.width,
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(15),
-                    alignment: Alignment.centerLeft,
-                    child: const Text(
-                      "Source Apk Path : ",
-                      style: TextStyle(fontSize: 16, color: Colors.black),
-                    ),
-                  ),
-                  DropTargetCommon(
+      body: _status == _loading
+          ? Container(
+              alignment: Alignment.center,
+              child: const CircularProgressIndicator(),
+            )
+          : Column(
+              children: [
+                Expanded(
+                    child: SingleChildScrollView(
+                  child: SizedBox(
                     width: MediaQuery.of(context).size.width,
-                    height: 200,
-                    dropPathCallback: (path) {
-                      _getSourcePath(path);
-                    },
-                    tapPathCallback: (path) {
-                      _getSourcePath(path);
-                    },
-                    margin: const EdgeInsets.symmetric(horizontal: 15),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(15),
-                    alignment: Alignment.centerLeft,
-                    child: const Text(
-                      "Target Apk Path : ",
-                      style: TextStyle(fontSize: 16, color: Colors.black),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(15),
+                          alignment: Alignment.centerLeft,
+                          child: const Text(
+                            "Source Apk Path : ",
+                            style: TextStyle(fontSize: 16, color: Colors.black),
+                          ),
+                        ),
+                        DropTargetCommon(
+                          width: MediaQuery.of(context).size.width,
+                          height: 200,
+                          presetPath: _currentSourcePath,
+                          dropPathCallback: (path) {
+                            _getSourcePath(path);
+                          },
+                          tapPathCallback: (path) {
+                            _getSourcePath(path);
+                          },
+                          margin: const EdgeInsets.symmetric(horizontal: 15),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(15),
+                          alignment: Alignment.centerLeft,
+                          child: const Text(
+                            "Target Apk Path : ",
+                            style: TextStyle(fontSize: 16, color: Colors.black),
+                          ),
+                        ),
+                        Container(
+                          width: MediaQuery.of(context).size.width,
+                          height: 200,
+                          margin: const EdgeInsets.symmetric(horizontal: 15),
+                          child: TextField(
+                            controller: _controller,
+                          ),
+                        )
+                      ],
                     ),
                   ),
-                  Container(
-                    width: MediaQuery.of(context).size.width,
-                    height: 200,
-                    margin: const EdgeInsets.symmetric(horizontal: 15),
-                    child: TextField(
-                      controller: _controller,
-                    ),
-                  )
-                ],
-              ),
+                )),
+              ],
             ),
-          )),
-        ],
-      ),
     );
   }
 
   void _getSourcePath(String path) {
-    _currentSource = path;
     String key =
         "${SharedPreferenceUtil.module_setting_source}${widget.moduleId}";
     saveSharedString(key, path);

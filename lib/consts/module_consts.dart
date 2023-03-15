@@ -3,6 +3,7 @@ class ModuleId {
   static const int settings = 1;
   static const int vod_widget = 2;
   static const int system_ui = 3;
+  static const int install = 4;
 }
 
 class ModuleName {
@@ -16,7 +17,15 @@ class ModuleName {
         return "VodWidget";
       case ModuleId.system_ui:
         return "SystemUI";
+      case ModuleId.install:
+        return "Install";
     }
+    return "";
+  }
+}
+
+class ModuleTarget{
+  static String getTargetPathById(int id) {
     return "";
   }
 }

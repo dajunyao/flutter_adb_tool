@@ -121,9 +121,9 @@ class _DeviceButtonState extends State<DeviceButton> {
     _status = SEARCHING;
     _deviceList = [];
     try {
-      String cmd = AdbUtil.generateCmd("devices", needDevice: false);
-      widget.logBack?.call(cmd, true);
-      var res = await _shell.run(cmd);
+      List<String> cmd = AdbUtil.generateCmd("devices", needDevice: false);
+      widget.logBack?.call(cmd[1], true);
+      var res = await _shell.run(cmd[0]);
       if (res.isNotEmpty && res.first.exitCode == 0) {
         var line = res.outLines;
         var firstDevice = "";
@@ -161,8 +161,8 @@ class _DeviceButtonState extends State<DeviceButton> {
       _status = ERROR;
       if (e is ShellException) {
         ShellException a = e;
-        if (a.result != null && a.result!.stderr is String) {
-          widget.logBack?.call(a.result!.stderr, false);
+        if (a.result != null && a.result!.stdout is String) {
+          widget.logBack?.call(a.result!.stdout, false);
         }
       } else {
         widget.logBack?.call(e.toString(), false);
